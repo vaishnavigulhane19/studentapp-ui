@@ -28,13 +28,12 @@ pipeline {
                 '''
             }
 
-        }
-
             post {
                 success {
                      archiveArtifacts artifacts: '**/target/*.war' ,fingerprint: true
                 } 
             }
+        }    
 
         stage('Artifacts to s3') {
             steps {
