@@ -30,16 +30,16 @@ pipeline {
 
         }
 
-        post {
-            success {
-                archiveArtifacts artifacts: '**/target/*.war' ,fingerprint: true
+            post {
+                success {
+                     archiveArtifacts artifacts: '**/target/*.war' ,fingerprint: true
+                } 
             }
-        }
 
         stage('Artifacts to s3') {
             steps {
                 sh '''
-                aws s3 cp /target/*.war /s3://deploywithnavi.space/student.war
+                aws s3 cp target/*.war s3://deploywithnavi.space/student.war
                 '''
             }
         }    
