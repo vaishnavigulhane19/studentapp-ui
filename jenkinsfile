@@ -4,7 +4,7 @@ pipeline {
     }
 
     environment {
-        my_aws_cred = credentials('aws-cred')
+        my_aws_access= credentials('aws-access')
     }
 
     tools {
@@ -14,76 +14,35 @@ pipeline {
     stages {
         stage('checkout') {
             steps {
-                git branch: 'master', url: 'https://github.com/mayurpandit25/studentapp-ui.git'
+            git branch: 'master', url: 'https://github.com/vaishnavigulhane19/studentapp-ui.git'
             }
+
         }
+
 
         stage('Build') {
             steps {
-                sh 'mvn clean package'
-            }
-            post {
-                success {
-                    archiveArtifacts artifacts: '**/target/*.war', fingerprint: true
-                }
-            }
-        }
-
-        stage('Artifacts to S3') {
-            steps {
-                sh '''
-                aws s3 cp target/*.war s3://mayurcbz.space/Artifacts/student.war
+                sh'''
+                mvn clean package
+                echo "build is successfull"
                 '''
             }
+
         }
-        
-        stage('SonarQube Analysis') {
-            steps {
-                withSonarQubeEnv('sonar') {
-                    sh 'mvn sonar:sonar'
-                }
+
+        post {
+            success {
+                archiveArtifacts artifacts : **/target/*.war ,fingerprint: true
             }
         }
 
-        stage('Quality Gate') {
-            steps {
-                timeout(time: 5, unit: 'MINUTES') {
-                    waitForQualityGate abortPipeline: true
-                }
-            }
-        }
-
-        stage('Docker Build') {
+        stage('Artifacts to s3') {
             steps {
                 sh '''
-                docker build --no-cache -t studentapp:v1 .
-                docker images
+                aws s3 cp /target/*.war /s3://deploywithnavi.space/student.war
                 '''
             }
-        }
-
-        stage('push image to ECR') {
-            steps {
-                sh '''
-                aws ecr get-login-password --region us-east-2 | docker login --username AWS --password-stdin 942049393829.dkr.ecr.us-east-2.amazonaws.com
-                docker tag studentapp:v1 942049393829.dkr.ecr.us-east-2.amazonaws.com/studentapp:latest
-                docker push 942049393829.dkr.ecr.us-east-2.amazonaws.com/studentapp:latest
-                '''
-            }
-        }
-
-        stage('Deploy to EKS') {
-            steps {
-                sh '''
-                aws eks update-kubeconfig --region us-east-2 --name my-cluster-mayur
-                sudo snap install kubectl --classic
-                kubectl apply -f k8s/
-                kubectl get pods 
-                sleep 10
-                kubectl get pods
-                kubectl get svc -o wide
-                '''
-            }
-        }
+        }    
     }
 }
+    
